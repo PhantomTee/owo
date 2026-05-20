@@ -9,6 +9,7 @@ import { ARC_USDC, OWO_CONTRACT } from "@/lib/constants"
 import { dryRunLabel, formatUsdc, rateToHourly, rateToMonthly, usdcToBaseUnits } from "@/lib/money"
 import { Brand } from "@/components/brand"
 import { Button } from "@/components/button"
+import { StreamCardSkeleton } from "@/components/skeleton"
 import { RuntimeConnectKitButton, WalletProvider } from "@/components/wallet-provider"
 
 type StreamRow = {
@@ -252,7 +253,7 @@ function EmployerDashboardContent() {
           {status && <p className="mt-3 rounded-md bg-gold/20 px-4 py-2 text-sm text-forest">{status}</p>}
 
           <div className="mt-4 grid gap-4">
-            {loading && <div className="rounded-lg bg-white/70 p-6 text-forest shadow-soft">Loading streams…</div>}
+            {loading && <><StreamCardSkeleton /><StreamCardSkeleton /></>}
             {!loading && error && <div className="rounded-lg border border-clay/30 bg-white/70 p-6 text-clay shadow-soft">{error}</div>}
             {!loading && !error && streams.length === 0 && (
               <div className="rounded-lg bg-white/70 p-6 text-charcoal/70 shadow-soft">

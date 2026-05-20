@@ -8,6 +8,7 @@ import { ARC_EXPLORER } from "@/lib/constants"
 import { formatUsdc } from "@/lib/money"
 import { getSupabaseBrowser } from "@/lib/supabase"
 import { useLiveBalance } from "@/hooks/useLiveBalance"
+import { Skeleton, WorkerBalanceSkeleton } from "@/components/skeleton"
 
 type WorkerState = {
   worker: { email: string; name: string; wallet_address: string }
@@ -137,12 +138,14 @@ export default function WorkerDashboard() {
       ) : (
         <section className="mx-auto mt-10 grid max-w-6xl gap-6 lg:grid-cols-[1fr_380px]">
           <div>
+            {loading ? (
+              <WorkerBalanceSkeleton />
+            ) : (
             <div className="rounded-lg bg-forest p-8 text-cream shadow-soft">
               <p className="text-sm opacity-75">Your Balance</p>
               <h1 className={`mt-3 font-heading text-6xl md:text-8xl ${liveBalance.recalibrating ? "recalibrate" : ""}`}>
                 ${liveBalance.display}
               </h1>
-              {liveBalance.loading && <p className="mt-2 text-sm text-gold">Syncing on-chain balance…</p>}
               {liveBalance.error && <p className="mt-2 text-sm text-gold">{liveBalance.error}</p>}
               <p className="mt-3 opacity-80">
                 {activeStream?.start_time
@@ -164,6 +167,7 @@ export default function WorkerDashboard() {
               </div>
               {message && <p className="mt-4 text-sm leading-6 text-gold">{message}</p>}
             </div>
+            )}
 
             <div className="mt-6 rounded-lg bg-white/70 p-6 shadow-soft">
               <h2 className="font-heading text-3xl text-forest">Payment History</h2>
@@ -177,7 +181,14 @@ export default function WorkerDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.length === 0 && (
+                    {loading && Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i} className="border-t border-forest/10">
+                        <td className="py-3"><Skeleton className="h-4 w-32" /></td>
+                        <td><Skeleton className="h-4 w-16" /></td>
+                        <td><Skeleton className="h-4 w-28" /></td>
+                      </tr>
+                    ))}
+                    {!loading && payments.length === 0 && (
                       <tr>
                         <td className="border-t border-forest/10 py-6 text-charcoal/60" colSpan={3}>
                           No payments yet.
