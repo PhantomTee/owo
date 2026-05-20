@@ -1,0 +1,11 @@
+.env
+.env*.local
+node_modules
+.next
+.next-verify*
+artifacts
+cache
+typechain-types
+coverage
+coverage.json
+*.log
