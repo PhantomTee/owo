@@ -10,7 +10,7 @@ import { dryRunLabel, formatUsdc, rateToHourly, rateToMonthly, usdcToBaseUnits }
 import { Brand } from "@/components/brand"
 import { Button } from "@/components/button"
 import { StreamCardSkeleton } from "@/components/skeleton"
-import { RuntimeConnectKitButton, WalletProvider } from "@/components/wallet-provider"
+import { ConnectWalletButton, WalletPreloader, WalletProvider } from "@/components/wallet-provider"
 
 type StreamRow = {
   id: number
@@ -38,6 +38,7 @@ export default function EmployerDashboardClient() {
 
 function EmployerDashboardContent() {
   const [address, setAddress] = useState<string | null>(null)
+  const [walletReady, setWalletReady] = useState(false)
   const [streams, setStreams] = useState<StreamRow[]>([])
   const [balances, setBalances] = useState<Record<number, { earned: string; remaining: string }>>({})
   const [alerts, setAlerts] = useState<AlertRow[]>([])
@@ -51,9 +52,11 @@ function EmployerDashboardContent() {
   useEffect(() => {
     let cancelled = false
     async function syncAccounts() {
-      if (!window.ethereum) return
-      const accounts = (await window.ethereum.request({ method: "eth_accounts" })) as string[]
-      if (!cancelled) setAddress(accounts[0] || null)
+      if (window.ethereum) {
+        const accounts = (await window.ethereum.request({ method: "eth_accounts" })) as string[]
+        if (!cancelled) setAddress(accounts[0] || null)
+      }
+      if (!cancelled) setWalletReady(true)
     }
     syncAccounts()
     const provider = window.ethereum as
@@ -225,11 +228,13 @@ function EmployerDashboardContent() {
     }
   }
 
+  if (!walletReady) return <WalletPreloader />
+
   return (
     <main className="min-h-screen bg-cream px-5 py-6 text-charcoal">
       <header className="mx-auto flex max-w-7xl items-center justify-between">
         <Brand />
-        <RuntimeConnectKitButton />
+        <ConnectWalletButton />
       </header>
 
       <section className="mx-auto mt-8 grid max-w-7xl gap-6 lg:grid-cols-[1fr_360px]">
