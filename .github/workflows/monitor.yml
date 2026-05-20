@@ -1,0 +1,24 @@
+name: Owo Agent Monitor
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:          # allow manual trigger from GitHub UI
+
+jobs:
+  monitor:
+    name: Run AI payroll monitor
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Call monitor endpoint
+        run: |
+          STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/agent/monitor" \
+            -H "Content-Type: application/json")
+          cat /tmp/response.json
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Monitor returned HTTP $STATUS"
+            exit 1
+          fi
