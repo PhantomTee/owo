@@ -1,5 +1,5 @@
-export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-forest/10 ${className}`} />
+export function Skeleton({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+  return <div className={`animate-pulse rounded-md bg-forest/10 ${className}`} style={style} />
 }
 
 export function StreamCardSkeleton() {
