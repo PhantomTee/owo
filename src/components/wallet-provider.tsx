@@ -41,8 +41,12 @@ export function ConnectWalletButton() {
       const list = accounts as string[]
       setAddress(list[0] || null)
     }
-    window.ethereum.on?.("accountsChanged", onChanged)
-    return () => { window.ethereum?.removeListener?.("accountsChanged", onChanged) }
+    const provider = window.ethereum as typeof window.ethereum & {
+      on?: (event: string, listener: (accounts: unknown) => void) => void
+      removeListener?: (event: string, listener: (accounts: unknown) => void) => void
+    }
+    provider.on?.("accountsChanged", onChanged)
+    return () => { provider.removeListener?.("accountsChanged", onChanged) }
   }, [])
 
   async function connect() {
