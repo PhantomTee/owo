@@ -11,7 +11,8 @@ import { formatUsdc } from "@/lib/money"
 import { getSupabaseBrowser } from "@/lib/supabase"
 import { useLiveBalance } from "@/hooks/useLiveBalance"
 
-const APP_ID = process.env.NEXT_PUBLIC_CIRCLE_APP_ID as string
+// Strip BOM (﻿) and whitespace that can corrupt env vars when set via CLI/editor
+const APP_ID = (process.env.NEXT_PUBLIC_CIRCLE_APP_ID ?? "").replace(/^﻿/, "").trim()
 
 type WorkerState = {
   worker: { email: string; name: string; wallet_address: string }
