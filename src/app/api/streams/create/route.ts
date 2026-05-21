@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { createOrLoadWorkerWallet } from "@/lib/circle"
 import { monthlyUsdToRate } from "@/lib/money"
 import { getSupabaseAdmin } from "@/lib/supabase"
 
@@ -13,37 +12,40 @@ export async function POST(request: Request) {
     const monthlySalaryUSD = Number(body.monthlySalaryUSD)
 
     if (!workerEmail || !workerName || !jobTitle || !employerWallet || !monthlySalaryUSD) {
-      return NextResponse.json({ error: "Missing required worker or salary fields" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const wallet = await createOrLoadWorkerWallet(workerEmail)
     const supabase = getSupabaseAdmin()
-    const { data: worker, error } = await supabase
+
+    // Look up existing worker — they must have completed Circle wallet setup first
+    const { data: existingWorker } = await supabase
       .from("workers")
-      .upsert(
-        {
-          email: workerEmail,
-          name: workerName,
-          job_title: jobTitle,
-          circle_user_id: wallet.circleUserId,
-          circle_wallet_id: wallet.walletId,
-          wallet_address: wallet.walletAddress,
-          employer_wallet: employerWallet
-        },
-        { onConflict: "email" }
-      )
-      .select()
+      .select("*")
+      .eq("email", workerEmail)
       .single()
 
+    if (!existingWorker?.wallet_address) {
+      return NextResponse.json({
+        error: `This worker hasn't set up their Circle wallet yet. Ask ${workerEmail} to visit the worker dashboard and complete wallet setup first.`
+      }, { status: 400 })
+    }
+
+    // Update worker record with latest employer and job info
+    const { data: worker, error } = await supabase
+      .from("workers")
+      .update({ name: workerName, job_title: jobTitle, employer_wallet: employerWallet })
+      .eq("email", workerEmail)
+      .select()
+      .single()
     if (error) throw error
 
     const ratePerSecond = monthlyUsdToRate(monthlySalaryUSD)
     return NextResponse.json({
       worker,
       ratePerSecond: ratePerSecond.toString(),
-      workerWalletAddress: wallet.walletAddress,
+      workerWalletAddress: existingWorker.wallet_address,
       streamParams: {
-        worker: wallet.walletAddress,
+        worker: existingWorker.wallet_address,
         ratePerSecond: ratePerSecond.toString(),
         workerName,
         jobTitle

@@ -8,13 +8,28 @@ export async function POST(request: Request) {
     if (!normalized) return NextResponse.json({ error: "Email is required" }, { status: 400 })
 
     const supabase = getSupabaseAdmin()
-    const { data: worker, error } = await supabase.from("workers").select("*").eq("email", normalized).single()
-    if (error) throw error
+    const { data: worker, error } = await supabase
+      .from("workers")
+      .select("*")
+      .eq("email", normalized)
+      .single()
+
+    // Worker not in DB at all — needs full setup
+    if (error || !worker) {
+      return NextResponse.json({ needsWalletSetup: true })
+    }
+
+    // Worker exists but hasn't completed Circle PIN setup yet
+    if (!worker.wallet_address) {
+      return NextResponse.json({ needsWalletSetup: true, name: worker.name, jobTitle: worker.job_title })
+    }
+
     const { data: streams } = await supabase
       .from("streams")
       .select("*")
       .eq("worker_id", worker.id)
       .order("created_at", { ascending: false })
+
     const { data: payments } = await supabase
       .from("payment_logs")
       .select("*")
