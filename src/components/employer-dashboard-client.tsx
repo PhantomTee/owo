@@ -311,7 +311,6 @@ function EmployerDashboardContent() {
                   <p className="mt-4 font-semibold">
                     ${rateToMonthly(stream.rate_per_second).toLocaleString("en-US", { maximumFractionDigits: 0 })}/month
                     {" · "}${rateToHourly(stream.rate_per_second).toFixed(2)}/hr
-                    {" · "}${(Number(stream.rate_per_second) / 1e6).toFixed(6)}/sec
                   </p>
                   <div className="mt-4 h-3 overflow-hidden rounded-full bg-forest/10">
                     <div className="h-full bg-gold transition-all duration-500" style={{ width: `${pct}%` }} />

@@ -36,6 +36,7 @@ function WorkerDashboard() {
   const [encryptionKey, setEncryptionKey] = useState("")
   const [message, setMessage] = useState("")
   const [setupMessage, setSetupMessage] = useState("")
+  const [namePrefilled, setNamePrefilled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [withdrawing, setWithdrawing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -59,7 +60,11 @@ function WorkerDashboard() {
       if (res.error) throw new Error(res.error)
 
       if (res.needsWalletSetup) {
-        if (res.name) { setName(res.name); setJobTitle(res.jobTitle || "") }
+        if (res.name) {
+          setName(res.name)
+          setJobTitle(res.jobTitle || "")
+          setNamePrefilled(true)
+        }
         setStep("setup")
         return
       }
@@ -273,7 +278,7 @@ function WorkerDashboard() {
             Your employer has invited you to Owo. First, create your Circle wallet by setting a PIN. This is a one-time step.
           </p>
           <div className="mt-6 space-y-3">
-            {!name && (
+            {!namePrefilled && (
               <>
                 <input
                   value={name}
@@ -304,7 +309,7 @@ function WorkerDashboard() {
             </div>
           )}
           {error && <p className="mt-3 text-sm text-clay">{error}</p>}
-          <button onClick={() => { setStep("email"); setError("") }} className="mt-4 text-xs text-charcoal/40 hover:text-charcoal/70">← Back</button>
+          <button onClick={() => { setStep("email"); setError(""); setName(""); setJobTitle(""); setNamePrefilled(false) }} className="mt-4 text-xs text-charcoal/40 hover:text-charcoal/70">← Back</button>
         </section>
       )}
 
