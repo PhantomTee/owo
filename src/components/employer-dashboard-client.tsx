@@ -9,6 +9,8 @@ import { ARC_USDC, OWO_CONTRACT } from "@/lib/constants"
 import { dryRunLabel, formatUsdc, rateToHourly, rateToMonthly, usdcToBaseUnits } from "@/lib/money"
 import { Brand } from "@/components/brand"
 import { Button } from "@/components/button"
+import { ErrorBoundary } from "@/components/error-boundary"
+import { NetworkGuard } from "@/components/network-guard"
 import { StreamCardSkeleton } from "@/components/skeleton"
 import { ConnectWalletButton, WalletPreloader, WalletProvider } from "@/components/wallet-provider"
 
@@ -30,9 +32,13 @@ type AlertRow = {
 
 export default function EmployerDashboardClient() {
   return (
-    <WalletProvider>
-      <EmployerDashboardContent />
-    </WalletProvider>
+    <ErrorBoundary>
+      <WalletProvider>
+        <NetworkGuard>
+          <EmployerDashboardContent />
+        </NetworkGuard>
+      </WalletProvider>
+    </ErrorBoundary>
   )
 }
 
@@ -255,14 +261,31 @@ function EmployerDashboardContent() {
             </Button>
           </div>
 
-          {status && <p className="mt-3 rounded-md bg-gold/20 px-4 py-2 text-sm text-forest">{status}</p>}
+          {status && (
+            <div className="mt-3 flex items-center gap-3 rounded-md bg-gold/20 px-4 py-3 text-sm font-medium text-forest">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-forest opacity-50" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-forest" />
+              </span>
+              {status}
+            </div>
+          )}
 
           <div className="mt-4 grid gap-4">
             {loading && <><StreamCardSkeleton /><StreamCardSkeleton /></>}
             {!loading && error && <div className="rounded-lg border border-clay/30 bg-white/70 p-6 text-clay shadow-soft">{error}</div>}
             {!loading && !error && streams.length === 0 && (
-              <div className="rounded-lg bg-white/70 p-6 text-charcoal/70 shadow-soft">
-                No streams yet. Add a worker to create the first on-chain salary stream.
+              <div className="rounded-lg border-2 border-dashed border-forest/20 bg-white/50 p-10 text-center shadow-soft">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold/20 text-forest">
+                  <Wallet className="h-6 w-6" />
+                </div>
+                <h3 className="font-heading text-2xl text-forest">No streams yet</h3>
+                <p className="mt-2 text-sm text-charcoal/60 max-w-xs mx-auto leading-6">
+                  Add your first worker to create an on-chain salary stream. Money flows every second — no waiting, no bank.
+                </p>
+                <Button className="mt-6" onClick={() => setOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Add your first worker
+                </Button>
               </div>
             )}
             {streams.map((stream) => {

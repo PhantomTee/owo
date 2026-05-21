@@ -27,7 +27,10 @@ export async function POST(request: Request) {
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(json?.message || `Circle token request failed: ${res.status}`)
 
-    return NextResponse.json({ userToken: json.data?.userToken })
+    return NextResponse.json({
+      userToken: json.data?.userToken,
+      encryptionKey: json.data?.encryptionKey
+    })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 })
   }

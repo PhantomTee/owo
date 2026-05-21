@@ -1,6 +1,23 @@
+"use client"
+
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import { Lock, Wallet, Waves } from "lucide-react"
 import { Brand } from "@/components/brand"
+
+function TickingCounter() {
+  const [value, setValue] = useState(0.000001)
+  useEffect(() => {
+    const rate = 0.00000578703 // ~$0.50/day in micro increments
+    const id = setInterval(() => setValue((v) => +(v + rate).toFixed(9)), 100)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <div className="font-heading text-5xl font-semibold text-forest drop-shadow-sm sm:text-6xl md:text-7xl lg:text-8xl tabular-nums">
+      ${value.toFixed(6)}
+    </div>
+  )
+}
 
 export default function LandingPage() {
   return (
@@ -45,9 +62,7 @@ export default function LandingPage() {
         <div className="relative flex min-h-[260px] items-center justify-center md:min-h-[340px]">
           <div className="absolute h-52 w-52 rounded-full border border-gold/40 sm:h-64 sm:w-64" />
           <div className="absolute h-64 w-64 rounded-full border border-forest/20 sm:h-80 sm:w-80" />
-          <div className="font-heading text-5xl font-semibold text-forest drop-shadow-sm sm:text-6xl md:text-7xl lg:text-8xl">
-            $0.000001
-          </div>
+          <TickingCounter />
         </div>
       </section>
 

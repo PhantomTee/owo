@@ -9,3 +9,5 @@ typechain-types
 coverage
 coverage.json
 *.log
+
+.vercel
