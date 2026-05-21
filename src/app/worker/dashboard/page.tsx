@@ -21,6 +21,7 @@ type WorkerState = {
 }
 
 type Step = "email" | "setup" | "dashboard"
+type CircleExecuteResult = { data?: { txHash?: string; signature?: string } }
 
 export default function WorkerDashboardPage() {
   return <ErrorBoundary><WorkerDashboard /></ErrorBoundary>
@@ -117,8 +118,7 @@ function WorkerDashboard() {
       setSetupMessage("Opening Circle wallet setup — set your PIN when prompted…")
       const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
       // Reset singleton so receivedResponseFromService flag is cleared on each attempt
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(W3SSdk as any).instance = null
+      ;(W3SSdk as unknown as { instance: unknown }).instance = null
       const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
       sdk.setAuthentication({ userToken: token, encryptionKey: encKey })
       await Promise.race([
@@ -187,8 +187,7 @@ function WorkerDashboard() {
 
       setMessage("Opening Circle wallet — enter your PIN to confirm withdrawal…")
       const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(W3SSdk as any).instance = null
+      ;(W3SSdk as unknown as { instance: unknown }).instance = null
       const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
       sdk.setAuthentication({ userToken: workerToken, encryptionKey })
 
@@ -196,8 +195,8 @@ function WorkerDashboard() {
         new Promise<void>((resolve, reject) => {
           sdk.execute(challengeId, async (err, res) => {
             if (err) { reject(new Error(err.message ?? "Circle challenge failed")); return }
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const txHash: string = (res as any)?.data?.txHash ?? (res as any)?.data?.signature ?? ""
+            const result = res as CircleExecuteResult | undefined
+            const txHash: string = result?.data?.txHash ?? result?.data?.signature ?? ""
             await fetch(`/api/streams/${activeStream.id}/log-withdrawal`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
