@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { isAddress } from "ethers"
 import { monthlyUsdToRate } from "@/lib/money"
 import { getSupabaseAdmin } from "@/lib/supabase"
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
     const employerWallet = String(body.employerWallet || "").toLowerCase()
     const monthlySalaryUSD = Number(body.monthlySalaryUSD)
 
-    if (!workerEmail || !workerName || !jobTitle || !employerWallet || !monthlySalaryUSD) {
+    if (!workerEmail || !workerName || !jobTitle || !isAddress(employerWallet) || !Number.isFinite(monthlySalaryUSD) || monthlySalaryUSD <= 0) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 

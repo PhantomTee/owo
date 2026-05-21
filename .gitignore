@@ -3,11 +3,13 @@
 node_modules
 .next
 .next-verify*
+.hardhat-local
 artifacts
 cache
 typechain-types
 coverage
 coverage.json
 *.log
+*.tsbuildinfo
 
 .vercel

@@ -6,8 +6,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const streamId = BigInt(body.streamId)
-    const workerId = body.workerId
+    const workerId = String(body.workerId || "")
     const monthlySalaryUSD = Number(body.monthlySalaryUSD)
+    if (!workerId || !Number.isFinite(monthlySalaryUSD) || monthlySalaryUSD <= 0) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    }
     const stream = await getStreamOnChain(streamId)
 
     const supabase = getSupabaseAdmin()

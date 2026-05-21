@@ -16,7 +16,8 @@ jobs:
         run: |
           STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
             -X POST "${{ secrets.NEXT_PUBLIC_APP_URL }}/api/agent/monitor" \
-            -H "Content-Type: application/json")
+            -H "Content-Type: application/json" \
+            -H "x-owo-api-key: ${{ secrets.OWO_INTERNAL_API_KEY }}")
           cat /tmp/response.json
           if [ "$STATUS" -ne 200 ]; then
             echo "Monitor returned HTTP $STATUS"

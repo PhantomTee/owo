@@ -5,8 +5,12 @@ export function monthlyUsdToRate(monthlySalaryUSD: number) {
 }
 
 export function usdcToBaseUnits(amount: number | string) {
-  const value = typeof amount === "string" ? Number(amount) : amount
-  return BigInt(Math.round(value * 10 ** USDC_DECIMALS))
+  const raw = String(amount).trim()
+  if (!/^\d+(\.\d+)?$/.test(raw)) throw new Error("Invalid USDC amount")
+
+  const [whole, fraction = ""] = raw.split(".")
+  const paddedFraction = fraction.padEnd(USDC_DECIMALS, "0").slice(0, USDC_DECIMALS)
+  return BigInt(whole) * 10n ** BigInt(USDC_DECIMALS) + BigInt(paddedFraction || "0")
 }
 
 export function formatUsdc(baseUnits: bigint | number | string, decimals = 2) {

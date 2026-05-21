@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { requireInternalRequest } from "@/lib/api-auth"
 import { getGroq } from "@/lib/groq"
 import { getStreamOnChain } from "@/lib/contract"
 import { getSupabaseAdmin } from "@/lib/supabase"
@@ -10,17 +11,24 @@ type MonitorResult = {
   urgencyHours: number
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const unauthorized = requireInternalRequest(request)
+    if (unauthorized) return unauthorized
+
     const supabase = getSupabaseAdmin()
     const groq = getGroq()
     if (!process.env.GROQ_MODEL) throw new Error("Missing GROQ_MODEL")
-    const { data: streams, error } = await supabase.from("streams").select("id, employer_wallet, workers(name,email)").eq("active", true)
+    const { data: streams, error } = await supabase.from("streams").select("id, employer_wallet, workers(name,email)")
     if (error) throw error
 
     let alertsCreated = 0
+    let streamsChecked = 0
     for (const row of streams || []) {
       const stream = await getStreamOnChain(BigInt(row.id))
+      await supabase.from("streams").update({ active: stream.active }).eq("id", row.id)
+      if (!stream.active) continue
+      streamsChecked += 1
       const earned = stream.active ? (BigInt(Math.floor(Date.now() / 1000)) - stream.lastWithdrawnAt) * stream.ratePerSecond : BigInt(0)
       const buffer = stream.depositedAmount - stream.withdrawnAmount - (earned > BigInt(0) ? earned : BigInt(0))
       const urgencyHours = stream.ratePerSecond > BigInt(0) ? Number(buffer / stream.ratePerSecond) / 3600 : 999999
@@ -58,7 +66,10 @@ export async function POST() {
         if (alertTo) {
           await fetch(`${baseUrl}/api/notify`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(process.env.OWO_INTERNAL_API_KEY ? { "x-owo-api-key": process.env.OWO_INTERNAL_API_KEY } : {})
+            },
             body: JSON.stringify({
               to: alertTo,
               name: stream.workerName,
@@ -71,11 +82,11 @@ export async function POST() {
     }
 
     await supabase.from("agent_logs").insert({
-      streams_checked: streams?.length || 0,
+      streams_checked: streamsChecked,
       alerts_created: alertsCreated
     })
 
-    return NextResponse.json({ streamsChecked: streams?.length || 0, alertsCreated })
+    return NextResponse.json({ streamsChecked, alertsCreated })
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 })
   }

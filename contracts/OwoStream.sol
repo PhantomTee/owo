@@ -43,7 +43,7 @@ contract OwoStream is Ownable {
     event Withdrawn(uint256 indexed streamId, address indexed worker, uint256 amount);
     event StreamPaused(uint256 indexed streamId);
     event StreamResumed(uint256 indexed streamId);
-    event StreamTerminated(uint256 indexed streamId, uint256 refund);
+    event StreamTerminated(uint256 indexed streamId, uint256 workerPayout, uint256 refund);
     event IdleInvested(uint256 indexed streamId, uint256 usdcAmount, uint256 usycOut);
     event USYCRedeemed(uint256 indexed streamId, uint256 usycAmount, uint256 usdcOut);
 
@@ -108,22 +108,18 @@ contract OwoStream is Ownable {
         amount = earnedSoFar(streamId);
         require(amount > 0, "nothing earned");
 
-        uint256 liquid = IERC20(usdcToken).balanceOf(address(this));
-        require(liquid >= amount, "insufficient liquid usdc");
-
-        s.withdrawnAmount += amount;
-        s.lastWithdrawnAt = block.timestamp;
-        IERC20(usdcToken).safeTransfer(s.worker, amount);
-        emit Withdrawn(streamId, s.worker, amount);
+        _payWorker(s, streamId, amount);
     }
 
     function pauseStream(uint256 streamId) external onlyEmployer(streamId) {
         Stream storage s = streams[streamId];
         require(s.active, "already paused");
         uint256 accrued = earnedSoFar(streamId);
-        s.withdrawnAmount += accrued;
         s.lastWithdrawnAt = block.timestamp;
         s.active = false;
+        if (accrued > 0) {
+            _payWorker(s, streamId, accrued);
+        }
         emit StreamPaused(streamId);
     }
 
@@ -140,14 +136,16 @@ contract OwoStream is Ownable {
         require(s.employer != address(0), "missing stream");
         uint256 claimable = earnedSoFar(streamId);
         uint256 refund = s.depositedAmount - s.withdrawnAmount - claimable;
-        s.withdrawnAmount += claimable;
         s.lastWithdrawnAt = block.timestamp;
         s.active = false;
+        if (claimable > 0) {
+            _payWorker(s, streamId, claimable);
+        }
         if (refund > 0) {
             s.depositedAmount -= refund;
             IERC20(usdcToken).safeTransfer(s.employer, refund);
         }
-        emit StreamTerminated(streamId, refund);
+        emit StreamTerminated(streamId, claimable, refund);
     }
 
     function earnedSoFar(uint256 streamId) public view returns (uint256) {
@@ -208,5 +206,15 @@ contract OwoStream is Ownable {
 
     function setUSYCTeller(address teller) external onlyOwner {
         usycTeller = teller;
+    }
+
+    function _payWorker(Stream storage s, uint256 streamId, uint256 amount) private {
+        uint256 liquid = IERC20(usdcToken).balanceOf(address(this));
+        require(liquid >= amount, "insufficient liquid usdc");
+
+        s.withdrawnAmount += amount;
+        s.lastWithdrawnAt = block.timestamp;
+        IERC20(usdcToken).safeTransfer(s.worker, amount);
+        emit Withdrawn(streamId, s.worker, amount);
     }
 }

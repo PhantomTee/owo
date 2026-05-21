@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "hardhat test",
     "compile:contracts": "node scripts/compile-contracts.cjs",
     "deploy:arc": "hardhat run scripts/deploy.cjs --network arcTestnet"
   },
@@ -33,18 +34,37 @@
     "wagmi": "^2.14.7"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.13",
     "@openzeppelin/contracts": "^5.2.0",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.17.12",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "autoprefixer": "^10.4.20",
+    "chai": "^4.5.0",
     "dotenv": "^16.4.7",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.35",
+    "globalthis": "^1.0.4",
     "hardhat": "^2.22.17",
+    "hardhat-gas-reporter": "^1.0.10",
+    "node-exports-info": "^1.6.0",
+    "object.values": "^1.2.1",
     "postcss": "^8.4.49",
+    "solidity-coverage": "^0.8.17",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
     "typescript": "^5.7.2"
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "^14.2.33"
   }
 }

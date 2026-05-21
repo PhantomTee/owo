@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server"
+import { requireInternalRequest } from "@/lib/api-auth"
 import { getResend } from "@/lib/resend"
 
 export async function POST(request: Request) {
   try {
+    const unauthorized = requireInternalRequest(request)
+    if (unauthorized) return unauthorized
+
     const { to, name, hours, dashboardUrl } = await request.json()
     if (!to) return NextResponse.json({ error: "Missing recipient" }, { status: 400 })
     const resend = getResend()

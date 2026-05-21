@@ -1,6 +1,17 @@
 import type { Metadata } from "next"
+import { DM_Sans, Fraunces } from "next/font/google"
 import { ErrorBoundary } from "@/components/error-boundary"
 import "./globals.css"
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans"
+})
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces"
+})
 
 export const metadata: Metadata = {
   title: "Owo - Salary streaming on Arc",
@@ -9,15 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`}>
       <body className="font-sans antialiased">
         <ErrorBoundary>{children}</ErrorBoundary>
       </body>

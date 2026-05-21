@@ -60,11 +60,14 @@ for (const [name, artifact] of Object.entries(contracts)) {
     path.join(outDir, `${name}.json`),
     JSON.stringify(
       {
+        _format: "hh-sol-artifact-1",
         contractName: name,
         sourceName: "contracts/OwoStream.sol",
         abi: artifact.abi,
         bytecode: `0x${artifact.evm.bytecode.object}`,
         deployedBytecode: `0x${artifact.evm.deployedBytecode.object}`,
+        linkReferences: {},
+        deployedLinkReferences: {},
         metadata: artifact.metadata
       },
       null,

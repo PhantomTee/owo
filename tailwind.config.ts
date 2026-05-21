@@ -13,8 +13,8 @@ const config: Config = {
         clay: "#b65f3b"
       },
       fontFamily: {
-        heading: ["Fraunces", "Georgia", "serif"],
-        sans: ["DM Sans", "ui-sans-serif", "system-ui"]
+        heading: ["var(--font-fraunces)", "Georgia", "serif"],
+        sans: ["var(--font-dm-sans)", "ui-sans-serif", "system-ui"]
       },
       boxShadow: {
         soft: "0 18px 60px rgba(26, 58, 42, 0.12)"

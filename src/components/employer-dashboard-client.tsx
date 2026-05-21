@@ -198,6 +198,7 @@ function EmployerDashboardContent() {
       setStatus("Depositing…")
       const tx = await owo.depositMore(BigInt(streamId), amount)
       await tx.wait()
+      await fetch(`/api/streams/${streamId}/sync`, { method: "POST" })
       setDepositOpen(null)
       setDepositAmount("")
       setStatus("")
@@ -215,6 +216,7 @@ function EmployerDashboardContent() {
       const owo = new Contract(OWO_CONTRACT, owoStreamEthersAbi, signer)
       const tx = await owo[functionName](BigInt(id))
       await tx.wait()
+      await fetch(`/api/streams/${id}/sync`, { method: "POST" })
       await load()
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "Stream action failed")
