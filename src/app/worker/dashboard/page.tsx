@@ -110,14 +110,25 @@ function WorkerDashboard() {
 
       setSetupMessage("Opening Circle wallet setup — set your PIN when prompted…")
       const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
+      // Reset singleton so receivedResponseFromService flag is cleared on each attempt
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(W3SSdk as any).instance = null
       const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
       sdk.setAuthentication({ userToken: token, encryptionKey: encKey })
-      await new Promise<void>((resolve, reject) => {
-        sdk.execute(challengeId, async (err) => {
-          if (err) { reject(new Error(err.message ?? "PIN setup failed")); return }
-          resolve()
-        })
-      })
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          sdk.execute(challengeId, async (err) => {
+            if (err) { reject(new Error(err.message ?? "PIN setup failed")); return }
+            resolve()
+          })
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("PIN dialog did not appear. Your domain must be added as an allowed origin in the Circle developer console (console.circle.com → Programmable Wallets → your app).")),
+            15000
+          )
+        )
+      ])
 
       // Small delay for Circle to index the wallet
       setSetupMessage("Saving your wallet address…")
@@ -170,22 +181,32 @@ function WorkerDashboard() {
 
       setMessage("Opening Circle wallet — enter your PIN to confirm withdrawal…")
       const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(W3SSdk as any).instance = null
       const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
       sdk.setAuthentication({ userToken: workerToken, encryptionKey })
 
-      await new Promise<void>((resolve, reject) => {
-        sdk.execute(challengeId, async (err, res) => {
-          if (err) { reject(new Error(err.message ?? "Circle challenge failed")); return }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const txHash: string = (res as any)?.data?.txHash ?? (res as any)?.data?.signature ?? ""
-          await fetch(`/api/streams/${activeStream.id}/log-withdrawal`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ txHash, amountUsdc: Number(claimable) / 1e6 })
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          sdk.execute(challengeId, async (err, res) => {
+            if (err) { reject(new Error(err.message ?? "Circle challenge failed")); return }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const txHash: string = (res as any)?.data?.txHash ?? (res as any)?.data?.signature ?? ""
+            await fetch(`/api/streams/${activeStream.id}/log-withdrawal`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ txHash, amountUsdc: Number(claimable) / 1e6 })
+            })
+            resolve()
           })
-          resolve()
-        })
-      })
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("PIN dialog did not appear. Your domain must be added as an allowed origin in the Circle developer console.")),
+            15000
+          )
+        )
+      ])
       setMessage(`Withdrawal complete! $${formatUsdc(claimable, 6)} USDC sent to your wallet.`)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Withdrawal failed")
