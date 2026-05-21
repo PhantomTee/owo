@@ -129,7 +129,7 @@ function WorkerDashboard() {
         }),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error("PIN dialog did not appear. Your domain must be added as an allowed origin in the Circle developer console (console.circle.com → Programmable Wallets → your app).")),
+            () => reject(new Error("Circle PIN dialog timed out. Go to console.circle.com → Wallets → User Controlled → Configurator and confirm ARC-TESTNET is enabled for your App ID.")),
             15000
           )
         )
@@ -207,7 +207,7 @@ function WorkerDashboard() {
         }),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error("PIN dialog did not appear. Your domain must be added as an allowed origin in the Circle developer console.")),
+            () => reject(new Error("Circle PIN dialog timed out. Go to console.circle.com → Wallets → User Controlled → Configurator and confirm ARC-TESTNET is enabled for your App ID.")),
             15000
           )
         )
