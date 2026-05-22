@@ -23,6 +23,27 @@ type WorkerState = {
 type Step = "email" | "setup" | "dashboard"
 type CircleExecuteResult = { data?: { txHash?: string; signature?: string } }
 
+async function executeCircleChallenge(challengeId: string, userToken: string, encryptionKey: string) {
+  if (!APP_ID) throw new Error("Circle App ID is missing")
+
+  const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
+  // Reset singleton so each user challenge gets a fresh SDK response state.
+  ;(W3SSdk as unknown as { instance: unknown }).instance = null
+  const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
+  sdk.setAuthentication({ userToken, encryptionKey })
+
+  return new Promise<CircleExecuteResult | undefined>((resolve, reject) => {
+    sdk.execute(challengeId, (err, result) => {
+      if (err) {
+        reject(new Error(err.message ?? "Circle challenge failed"))
+        return
+      }
+
+      resolve(result as CircleExecuteResult | undefined)
+    })
+  })
+}
+
 export default function WorkerDashboardPage() {
   return <ErrorBoundary><WorkerDashboard /></ErrorBoundary>
 }
@@ -116,29 +137,9 @@ function WorkerDashboard() {
       }
 
       setSetupMessage("Opening Circle wallet setup — set your PIN when prompted…")
-      const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
-      // Reset singleton so receivedResponseFromService flag is cleared on each attempt
-      ;(W3SSdk as unknown as { instance: unknown }).instance = null
-      const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
-      sdk.setAuthentication({ userToken: token, encryptionKey: encKey })
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          sdk.execute(challengeId, async (err) => {
-            if (err) { reject(new Error(err.message ?? "PIN setup failed")); return }
-            resolve()
-          })
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Circle PIN dialog timed out. Go to console.circle.com → Wallets → User Controlled → Configurator and confirm ARC-TESTNET is enabled for your App ID.")),
-            15000
-          )
-        )
-      ])
+      await executeCircleChallenge(challengeId, token, encKey)
 
-      // Small delay for Circle to index the wallet
       setSetupMessage("Saving your wallet address…")
-      await new Promise((r) => setTimeout(r, 2000))
       await saveWallet(email, token)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Wallet setup failed")
@@ -163,6 +164,10 @@ function WorkerDashboard() {
       body: JSON.stringify({ email: workerEmail })
     }).then((r) => r.json())
     if (loginRes.error) throw new Error(loginRes.error)
+    if (loginRes.needsWalletSetup || !loginRes.worker?.wallet_address) {
+      throw new Error("Your wallet address has not been saved yet. Try again in a moment.")
+    }
+
     setData(loginRes)
     setPayments(loginRes.payments || [])
     setSetupMessage("")
@@ -186,32 +191,13 @@ function WorkerDashboard() {
       if (!challengeId) throw new Error("No challenge ID returned")
 
       setMessage("Opening Circle wallet — enter your PIN to confirm withdrawal…")
-      const { W3SSdk } = await import("@circle-fin/w3s-pw-web-sdk")
-      ;(W3SSdk as unknown as { instance: unknown }).instance = null
-      const sdk = new W3SSdk({ appSettings: { appId: APP_ID } })
-      sdk.setAuthentication({ userToken: workerToken, encryptionKey })
-
-      await Promise.race([
-        new Promise<void>((resolve, reject) => {
-          sdk.execute(challengeId, async (err, res) => {
-            if (err) { reject(new Error(err.message ?? "Circle challenge failed")); return }
-            const result = res as CircleExecuteResult | undefined
-            const txHash: string = result?.data?.txHash ?? result?.data?.signature ?? ""
-            await fetch(`/api/streams/${activeStream.id}/log-withdrawal`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ txHash, amountUsdc: Number(claimable) / 1e6 })
-            })
-            resolve()
-          })
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("Circle PIN dialog timed out. Go to console.circle.com → Wallets → User Controlled → Configurator and confirm ARC-TESTNET is enabled for your App ID.")),
-            15000
-          )
-        )
-      ])
+      const circleResult = await executeCircleChallenge(challengeId, workerToken, encryptionKey)
+      const txHash: string = circleResult?.data?.txHash ?? circleResult?.data?.signature ?? ""
+      await fetch(`/api/streams/${activeStream.id}/log-withdrawal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txHash, amountUsdc: Number(claimable) / 1e6 })
+      })
       setMessage(`Withdrawal complete! $${formatUsdc(claimable, 6)} USDC sent to your wallet.`)
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Withdrawal failed")
