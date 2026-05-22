@@ -28,6 +28,7 @@ export default function LandingPage() {
           <Link href="/employer/dashboard">Employer</Link>
           <Link href="/worker/dashboard">Worker</Link>
           <Link href="/agent">Agent</Link>
+          <Link href="/agora">Agora</Link>
         </nav>
       </header>
 
@@ -55,6 +56,12 @@ export default function LandingPage() {
               href="/worker/dashboard"
             >
               I&apos;m a Worker →
+            </Link>
+            <Link
+              className="rounded-md bg-gold px-5 py-3 text-sm font-semibold text-forest sm:px-6"
+              href="/agora"
+            >
+              Agora Cockpit
             </Link>
           </div>
         </div>
